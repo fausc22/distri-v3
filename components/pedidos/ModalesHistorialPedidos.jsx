@@ -1905,7 +1905,6 @@ export function ResumenTotales({ productos }) {
 
 
 
-// ModalDetallePedido actualizado
 export function ModalDetallePedido({ 
   pedido,
   productos,
@@ -1922,7 +1921,6 @@ export function ModalDetallePedido({
   setMostrarModalFacturacion,
   isPedidoFacturado,
   isPedidoAnulado,
-  // Props para el modal PDF
   mostrarModalPDF,
   pdfURL,
   nombreArchivo,
@@ -1933,13 +1931,12 @@ export function ModalDetallePedido({
   onCerrarModalPDF
 }) {
   const [clienteExpandido, setClienteExpandido] = useState(false);
+  const [productosExpandidos, setProductosExpandidos] = useState(false); // NUEVO: Estado para colapsar productos en móvil
   
   const { user } = useAuth();
 
-  // Función helper para formatear fechas
   const formatearFecha = (fecha) => {
     if (!fecha) return 'Fecha no disponible';
-    
     return new Date(fecha).toLocaleString('es-AR', {
       day: '2-digit',
       month: '2-digit',
@@ -1953,10 +1950,8 @@ export function ModalDetallePedido({
 
   if (!pedido) return null;
   
-  // Control de acceso refinado
   const esGerente = user?.rol === 'GERENTE';
   const canEdit = !isPedidoFacturado && !isPedidoAnulado;
-  const canEditProducts = canEdit && esGerente;
 
   const toggleClienteExpansion = () => {
     setClienteExpandido(!clienteExpandido);
@@ -1969,22 +1964,19 @@ export function ModalDetallePedido({
   const handleConfirmarFacturacion = async (datosFacturacion) => {
     onCambiarEstado('Facturado');
     setMostrarModalFacturacion(false);
-    toast.success(`¡Pedido #${pedido.id} facturado exitosamente! Venta ID: ${datosFacturacion.ventaId}`);
+    toast.success(`Pedido #${pedido.id} facturado exitosamente! Venta ID: ${datosFacturacion.ventaId}`);
   };
 
-  // Función para abrir el modal de agregar producto
   const handleAbrirModalAgregar = () => {
     if (onAgregarProducto) {
       onAgregarProducto();
     }
   };
 
-  // Función para editar producto
   const handleEditarProductoGerente = (producto) => {
     onEditarProducto(producto);
   };
 
-  // Función para eliminar producto
   const handleEliminarProductoGerente = (producto) => {
     onEliminarProducto(producto);
   };
@@ -1994,6 +1986,7 @@ export function ModalDetallePedido({
       <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-2 sm:p-4">
         <div className="bg-white rounded-lg w-full max-w-xs sm:max-w-2xl lg:max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
           <div className="p-3 sm:p-4 lg:p-6">
+            {/* Header */}
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">
                 Pedido #{pedido.id}
@@ -2006,14 +1999,14 @@ export function ModalDetallePedido({
               </button>
             </div>
             
-            
-            
+            {/* Fecha */}
             <div className="mb-4">
               <h4 className="text-sm sm:text-lg font-semibold text-gray-700">
                 <strong>Fecha:</strong> {formatearFecha(pedido.fecha)}
               </h4>
             </div>
             
+            {/* Información Cliente */}
             <InformacionCliente 
               pedido={pedido} 
               expandido={clienteExpandido}
@@ -2024,80 +2017,124 @@ export function ModalDetallePedido({
               handleConfirmarFacturacion={handleConfirmarFacturacion}
             />
 
+            {/* Información Adicional */}
             <InformacionAdicional 
               pedido={pedido} 
               onActualizarObservaciones={onActualizarObservaciones}
               canEdit={canEdit}
             />
 
+            {/* SECCIÓN DE PRODUCTOS - COLAPSABLE EN MÓVIL */}
             <div className="mb-4">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Productos del Pedido</h3>
-              
-              {canEdit && (
-                <button
-                  onClick={handleAbrirModalAgregar}
-                  className="mb-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center"
-                >
-                  ➕ AGREGAR PRODUCTO
-                </button>
-              )}
+              {/* Header colapsable - SOLO EN MÓVIL */}
+              <div 
+                className="lg:hidden flex justify-between items-center bg-blue-50 p-3 rounded-lg cursor-pointer border-2 border-blue-200 mb-2"
+                onClick={() => setProductosExpandidos(!productosExpandidos)}
+              >
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Productos del Pedido</h3>
+                  <p className="text-sm text-gray-600">{productos.length} producto(s)</p>
+                </div>
+                <div className="text-blue-600">
+                  {productosExpandidos ? <MdExpandLess size={28} /> : <MdExpandMore size={28} />}
+                </div>
+              </div>
 
-              <TablaProductos
-                productos={productos}
-                onEditarProducto={handleEditarProductoGerente}
-                onEliminarProducto={handleEliminarProductoGerente}
-                loading={loading}
-                canEdit={canEdit}
-              />
-              <ResumenTotales productos={productos} />
+              {/* Título normal para desktop */}
+              <h3 className="hidden lg:block text-xl font-semibold text-gray-800 mb-4">
+                Productos del Pedido
+              </h3>
+              
+              {/* Botón agregar - visible solo cuando productos expandidos en móvil o siempre en desktop */}
+              <div className={`${productosExpandidos ? 'block' : 'hidden'} lg:block`}>
+                {canEdit && (
+                  <button
+                    onClick={handleAbrirModalAgregar}
+                    className="mb-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center w-full sm:w-auto"
+                  >
+                    ➕ AGREGAR PRODUCTO
+                  </button>
+                )}
+              </div>
+
+              {/* Contenido colapsable - SOLO EN MÓVIL CON SCROLL */}
+              <div className={`lg:hidden transition-all duration-300 ease-in-out ${
+                productosExpandidos ? 'opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+              }`}>
+                {/* Contenedor con scroll para productos */}
+                <div className={`${
+                  productosExpandidos ? 'max-h-[50vh] overflow-y-auto' : 'max-h-0'
+                } border rounded-lg mb-3`}>
+                  <TablaProductos
+                    productos={productos}
+                    onEditarProducto={handleEditarProductoGerente}
+                    onEliminarProducto={handleEliminarProductoGerente}
+                    loading={loading}
+                    canEdit={canEdit}
+                  />
+                </div>
+                {/* Resumen siempre visible cuando expandido */}
+                {productosExpandidos && <ResumenTotales productos={productos} />}
+              </div>
+
+              {/* Contenido siempre visible en DESKTOP */}
+              <div className="hidden lg:block">
+                <TablaProductos
+                  productos={productos}
+                  onEditarProducto={handleEditarProductoGerente}
+                  onEliminarProducto={handleEliminarProductoGerente}
+                  loading={loading}
+                  canEdit={canEdit}
+                />
+                <ResumenTotales productos={productos} />
+              </div>
             </div>
 
-            <div className="mt-6 flex flex-col sm:flex-row gap-4">
-              {esGerente && !isPedidoFacturado && (
-                <button 
-                  onClick={handleFacturar}
-                  className={`bg-green-600 hover:bg-green-700 text-white text-sm sm:text-lg font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors w-full ${
-                    esGerente ? 'sm:w-1/3' : ''
-                  }`}
-                >
-                  ✅ FACTURAR
-                </button>
-              )}
-              
-              <BotonGenerarPDFUniversal 
-                onGenerar={onGenerarPDF}
-                loading={generandoPDF}
-                texto="🖨️ IMPRIMIR"
-                className={`bg-blue-600 hover:bg-blue-700 ${
-                  esGerente && !isPedidoFacturado ? 'sm:w-1/3' : (isPedidoFacturado || !esGerente ? 'sm:w-1/2' : '')
-                }`}
-              />
+            {/* BOTONES DE ACCIÓN - TODOS DEL MISMO TAMAÑO Y RESPONSIVOS */}
+            <div className="mt-6 flex flex-col gap-3">
+              {/* Primera fila: Facturar + Imprimir (o solo Imprimir si no es gerente) */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                {esGerente && !isPedidoFacturado && (
+                  <button 
+                    onClick={handleFacturar}
+                    className="bg-green-600 hover:bg-green-700 text-white text-sm sm:text-base font-semibold px-4 py-3 rounded-lg transition-colors flex items-center justify-center flex-1"
+                  >
+                    ✅ FACTURAR
+                  </button>
+                )}
+                
+                <BotonGenerarPDFUniversal 
+                  onGenerar={onGenerarPDF}
+                  loading={generandoPDF}
+                  texto="🖨️ IMPRIMIR"
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-semibold px-4 py-3 rounded-lg transition-colors flex items-center justify-center flex-1"
+                />
+              </div>
 
-              {esGerente && !isPedidoFacturado && (
+              {/* Segunda fila: Anular + Cerrar (o solo Cerrar si no es gerente) */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                {esGerente && !isPedidoFacturado && (
+                  <button 
+                    onClick={() => onCambiarEstado('Anulado')}
+                    className="bg-red-600 hover:bg-red-700 text-white text-sm sm:text-base font-semibold px-4 py-3 rounded-lg transition-colors flex items-center justify-center flex-1"
+                  >
+                    🚫 ANULAR
+                  </button>
+                )}
+                
                 <button 
-                  onClick={() => onCambiarEstado('Anulado')}
-                  className={`bg-red-600 hover:bg-red-700 text-white text-sm sm:text-lg font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors w-full ${
-                    esGerente ? 'sm:w-1/3' : ''
-                  }`}
+                  onClick={onClose}
+                  className="bg-gray-600 hover:bg-gray-700 text-white text-sm sm:text-base font-semibold px-4 py-3 rounded-lg transition-colors flex items-center justify-center flex-1"
                 >
-                  🚫 ANULAR
+                  CERRAR
                 </button>
-              )}
-              
-              <button 
-                onClick={onClose}
-                className={`bg-gray-600 hover:bg-gray-700 text-white text-sm sm:text-lg font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors w-full ${
-                    esGerente && !isPedidoFacturado ? 'sm:w-1/3' : (isPedidoFacturado || !esGerente ? 'sm:w-1/2' : '')
-                }`}
-              >
-                CERRAR
-              </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal PDF Unificado con z-index más alto */}
+      {/* Modal PDF Unificado */}
       <ModalPDFUniversal
         mostrar={mostrarModalPDF}
         pdfURL={pdfURL}

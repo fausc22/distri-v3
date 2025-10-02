@@ -1,42 +1,23 @@
-// hooks/useEmpleados.js
+// hooks/useEmpleados.js - VERSIÓN MEJORADA
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
 import useAuth from './useAuth';
-
-import { axiosAuth, fetchAuth } from '../utils/apiClient';
+import { axiosAuth } from '../utils/apiClient';
 
 export const useEmpleados = () => {
   const [loading, setLoading] = useState(false);
-  
-  // Usar tu hook de autenticación
   const { user, logout, isManager } = useAuth();
 
-  // Obtener token para las requests
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return {
-      headers: {
-        'Authorization': token ? `Bearer ${token}` : '',
-        'Content-Type': 'application/json'
-      }
-    };
-  };
-
-  // Verificar permisos antes de cualquier operación
+  // Verificar permisos
   const checkPermissions = (action = 'gestionar empleados') => {
     if (!user) {
-      toast.error('Debes estar autenticado para realizar esta acción');
+      toast.error('Debes estar autenticado');
       logout();
       return false;
     }
 
     if (!isManager()) {
       toast.error('Solo los gerentes pueden gestionar empleados');
-      console.log('🔍 Debug permisos:');
-      console.log('Usuario actual:', user);
-      console.log('Rol del usuario:', user.rol);
-      console.log('Es gerente:', isManager());
       return false;
     }
 
@@ -45,67 +26,34 @@ export const useEmpleados = () => {
 
   // Crear empleado
   const crearEmpleado = async (empleadoData) => {
-    // Verificar permisos antes de crear
     if (!checkPermissions('crear empleados')) {
-      return { success: false, error: 'Sin permisos suficientes' };
+      return { success: false, error: 'Sin permisos' };
     }
 
     setLoading(true);
     try {
-      console.log('🚀 Creando empleado...');
-      console.log('Datos:', empleadoData);
-      console.log('Usuario logueado:', user);
-      console.log('Endpoint:', `/empleados/crear-empleado`);
-      
-      const headers = getAuthHeaders();
-      console.log('Headers:', headers);
+      const response = await axiosAuth.post('/empleados/crear-empleado', empleadoData);
 
-      const response = await axiosAuth.post(
-        `/empleados/crear-empleado`,
-        empleadoData,
-        headers
-      );
-
-      console.log('✅ Empleado creado exitosamente:', response.data);
       toast.success('Empleado creado exitosamente');
       return { success: true, data: response.data };
 
     } catch (error) {
-      console.error('❌ Error al crear empleado:', error);
-      console.log('Error response:', error.response);
-      console.log('Error status:', error.response?.status);
-      console.log('Error data:', error.response?.data);
+      console.error('Error al crear empleado:', error);
       
       let message = 'Error al crear empleado';
       
       if (error.response) {
         switch (error.response.status) {
           case 401:
-            message = 'Sesión expirada. Inicia sesión nuevamente.';
-            console.log('🔑 Error 401 - Token inválido o expirado');
+            message = 'Sesión expirada';
             logout();
             break;
           case 403:
-            message = 'No tienes permisos para crear empleados. Verifica tu rol de gerente.';
-            console.log('🚫 Error 403 - Sin permisos');
-            console.log('Rol actual:', user?.rol);
-            console.log('Token actual:', localStorage.getItem('token')?.substring(0, 20) + '...');
-            break;
-          case 422:
-            message = error.response.data?.message || 'Datos inválidos. Verifica la información.';
-            console.log('📝 Error 422 - Datos inválidos:', error.response.data);
-            break;
-          case 500:
-            message = 'Error interno del servidor. Intenta nuevamente.';
-            console.log('🔥 Error 500 - Error del servidor');
+            message = 'No tienes permisos';
             break;
           default:
-            message = error.response.data?.message || 'Error al crear empleado';
-            console.log(`⚠️ Error ${error.response.status}:`, error.response.data);
+            message = error.response.data?.message || message;
         }
-      } else {
-        console.log('🌐 Error de red:', error.message);
-        message = 'Error de conexión. Verifica tu red.';
       }
       
       toast.error(message);
@@ -115,48 +63,44 @@ export const useEmpleados = () => {
     }
   };
 
-  // Actualizar empleado
-  const actualizarEmpleado = async (empleadoData) => {
+  // Actualizar empleado - CORREGIDO: usa req.params.id
+  const actualizarEmpleado = async (id, empleadoData) => {
     if (!checkPermissions('actualizar empleados')) {
-      return { success: false, error: 'Sin permisos suficientes' };
+      return { success: false, error: 'Sin permisos' };
     }
 
     setLoading(true);
     try {
-      // Si la contraseña está vacía en modo edición, no la enviarla
+      // Si la contraseña está vacía, no enviarla
       const dataToSend = { ...empleadoData };
       if (!dataToSend.password || dataToSend.password.trim() === '') {
         delete dataToSend.password;
       }
 
-      console.log('🔄 Actualizando empleado:', dataToSend);
-
       const response = await axiosAuth.put(
-        `/empleados/actualizar-empleado`,
-        dataToSend,
-        getAuthHeaders()
+        `/empleados/actualizar-empleado/${id}`,
+        dataToSend
       );
 
-      console.log('✅ Empleado actualizado exitosamente');
       toast.success('Empleado actualizado exitosamente');
       return { success: true, data: response.data };
 
     } catch (error) {
-      console.error('❌ Error al actualizar empleado:', error);
+      console.error('Error al actualizar empleado:', error);
       
       let message = 'Error al actualizar empleado';
       
       if (error.response) {
         switch (error.response.status) {
           case 401:
-            message = 'Sesión expirada. Inicia sesión nuevamente.';
+            message = 'Sesión expirada';
             logout();
             break;
           case 403:
-            message = 'No tienes permisos para actualizar empleados.';
+            message = 'No tienes permisos';
             break;
           default:
-            message = error.response.data?.message || 'Error al actualizar empleado';
+            message = error.response.data?.message || message;
         }
       }
       
@@ -167,41 +111,33 @@ export const useEmpleados = () => {
     }
   };
 
-  // Buscar empleados
-  const buscarEmpleados = async (query) => {
-    if (!query || query.trim().length < 1) {
-      return [];
-    }
-
+  // Buscar empleados - CORREGIDO: usa 'search' como query param
+  const buscarEmpleados = async (searchTerm) => {
     if (!checkPermissions('buscar empleados')) {
-      return [];
+      return { success: false, data: [] };
     }
 
     setLoading(true);
     try {
-      console.log('🔍 Buscando empleados:', query);
-      
       const response = await axiosAuth.get(
-        `/empleados/buscar-empleado?q=${encodeURIComponent(query)}`,
-        getAuthHeaders()
+        `/empleados/buscar-empleado?search=${encodeURIComponent(searchTerm || '')}`
       );
 
-      console.log('✅ Empleados encontrados:', response.data);
-      return response.data;
+      return { success: true, data: response.data };
 
     } catch (error) {
-      console.error('❌ Error al buscar empleados:', error);
+      console.error('Error al buscar empleados:', error);
       
       let message = 'Error al buscar empleados';
       if (error.response?.status === 401) {
-        message = 'Sesión expirada. Inicia sesión nuevamente.';
+        message = 'Sesión expirada';
         logout();
       } else if (error.response?.data?.message) {
         message = error.response.data.message;
       }
       
       toast.error(message);
-      return [];
+      return { success: false, data: [] };
     } finally {
       setLoading(false);
     }
@@ -210,22 +146,19 @@ export const useEmpleados = () => {
   // Listar todos los empleados
   const listarEmpleados = async () => {
     if (!checkPermissions('listar empleados')) {
-      return { success: false, error: 'Sin permisos suficientes' };
+      return { success: false, data: [] };
     }
 
     setLoading(true);
     try {
-      const response = await axiosAuth.get(
-        `/empleados/listar`,
-        getAuthHeaders()
-      );
+      const response = await axiosAuth.get('/empleados/listar');
 
       return { success: true, data: response.data };
 
     } catch (error) {
       const message = error.response?.data?.message || 'Error al listar empleados';
       toast.error(message);
-      return { success: false, error: message };
+      return { success: false, data: [] };
     } finally {
       setLoading(false);
     }
@@ -234,15 +167,12 @@ export const useEmpleados = () => {
   // Obtener empleado por ID
   const obtenerEmpleado = async (id) => {
     if (!checkPermissions('obtener empleado')) {
-      return { success: false, error: 'Sin permisos suficientes' };
+      return { success: false, error: 'Sin permisos' };
     }
 
     setLoading(true);
     try {
-      const response = await axiosAuth.get(
-        `/empleados/${id}`,
-        getAuthHeaders()
-      );
+      const response = await axiosAuth.get(`/empleados/${id}`);
 
       return { success: true, data: response.data };
 
@@ -258,15 +188,12 @@ export const useEmpleados = () => {
   // Desactivar empleado
   const desactivarEmpleado = async (id) => {
     if (!checkPermissions('desactivar empleados')) {
-      return { success: false, error: 'Sin permisos suficientes' };
+      return { success: false, error: 'Sin permisos' };
     }
 
     setLoading(true);
     try {
-      const response = await axiosAuth.delete(
-        `/empleados/${id}`,
-        getAuthHeaders()
-      );
+      const response = await axiosAuth.delete(`/empleados/${id}`);
 
       toast.success('Empleado desactivado exitosamente');
       return { success: true, data: response.data };
@@ -280,11 +207,10 @@ export const useEmpleados = () => {
     }
   };
 
-  // Validaciones específicas para empleados
+  // Validaciones
   const validarDatosEmpleado = (datos, esEdicion = false) => {
     const errores = [];
 
-    // Validaciones básicas obligatorias
     if (!datos.nombre?.trim()) errores.push('El nombre es obligatorio');
     if (!datos.apellido?.trim()) errores.push('El apellido es obligatorio');
     if (!datos.usuario?.trim()) errores.push('El usuario es obligatorio');
@@ -295,12 +221,11 @@ export const useEmpleados = () => {
       errores.push('La contraseña debe tener al menos 6 caracteres');
     }
 
-    // En edición, validar contraseña solo si se proporcionó
+    // En edición, validar solo si se proporcionó
     if (esEdicion && datos.password && datos.password.length > 0 && datos.password.length < 6) {
       errores.push('La contraseña debe tener al menos 6 caracteres');
     }
 
-    // Validaciones opcionales (solo si tienen valor)
     if (datos.usuario && datos.usuario.length > 0) {
       if (datos.usuario.length < 3 || datos.usuario.length > 20) {
         errores.push('El usuario debe tener entre 3-20 caracteres');
