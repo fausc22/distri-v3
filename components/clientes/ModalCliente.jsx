@@ -93,11 +93,10 @@ export default function ModalCliente({
   };
 
   const condicionesIVA = [
-    'IVA Responsable Inscripto',
-    'IVA Sujeto Exento',
-    'Consumidor Final',
-    'Responsable Monotributo',
-    'IVA No Responsable'
+    'Responsable Inscripto',
+    'Exento',
+    'Monotributo',
+    'Consumidor Final'
   ];
 
   return (

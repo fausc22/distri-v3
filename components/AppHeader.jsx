@@ -301,6 +301,13 @@ function AppHeader() {
                   
                   {(role === 'GERENTE') && (
                     <>
+                    <MenuLink 
+                        href="/ventas/VentaDirecta" 
+                        className="block py-2 px-4 text-sm whitespace-nowrap"
+                        requiresOnline={true}
+                      >
+                        Venta Directa
+                      </MenuLink>
                       <MenuLink 
                         href="/ventas/Facturacion" 
                         className="block py-2 px-4 text-sm whitespace-nowrap mt-1 border-b border-black-200"
@@ -619,6 +626,13 @@ function AppHeader() {
                       
                       {(role === 'GERENTE') && (
                         <>
+                        <MenuLink 
+                            href="/ventas/VentaDirecta" 
+                            className="block py-2 px-4 hover:bg-blue-600 text-white"
+                            requiresOnline={true}
+                          >
+                             Venta Directa
+                          </MenuLink>
                           <MenuLink 
                             href="/ventas/Facturacion" 
                             className="block py-2 px-4 hover:bg-blue-600 text-white"

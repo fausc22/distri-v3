@@ -339,6 +339,7 @@ export default function Inicio() {
               
               {empleado?.rol === 'GERENTE' && (
                 <>
+                <LinkGuard href="/ventas/VentaDirecta" className="block text-blue-600 hover:text-blue-800 text-sm">• Venta Directa</LinkGuard>
                 <LinkGuard href="/ventas/Facturacion" className="block text-blue-600 hover:text-blue-800 text-sm">• Facturación</LinkGuard>
                   <LinkGuard href="/ventas/ListaPrecios" className="block text-blue-600 hover:text-blue-800 text-sm">• Lista de Precios</LinkGuard>
                   

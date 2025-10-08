@@ -8,7 +8,7 @@ import { useGenerarPDF } from '../../hooks/ventas/useGenerarPDFListaPrecio';
 import { ModalPDFUniversal, BotonGenerarPDFUniversal } from '../../components/shared/ModalPDFUniversal';
 
 import ClienteSelectorListaPrecios from '../../components/ventas/SelectorClientes';
-import ProductoSelector from '../../components/ventas/SelectorProductos';
+import ProductoSelector from '../../components/pedidos/SelectorProductos';
 import ProductosCarritoListaPrecios from '../../components/ventas/ProductosCarritoLP';
 import { ModalConfirmacionSalida } from '../../components/ventas/ModalesConfirmacion';
 

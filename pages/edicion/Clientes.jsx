@@ -95,10 +95,10 @@ export default function GestionClientes() {
 
   const columnas = [
     { key: 'nombre', label: 'Nombre', sortable: true },
-    { key: 'condicion_iva', label: 'Condición IVA', sortable: true },
+    { key: 'condicion_iva', label: 'Condición', sortable: true },
     { key: 'cuit', label: 'CUIT', sortable: true },
+    { key: 'direccion', label: 'Dirección', sortable: true },
     { key: 'ciudad', label: 'Ciudad', sortable: true },
-    { key: 'telefono', label: 'Teléfono', sortable: false },
     { key: 'acciones', label: 'Acciones', sortable: false }
   ];
 
@@ -182,14 +182,14 @@ export default function GestionClientes() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {cliente.cuit || '-'}
                     </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {cliente.direccion || '-'}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <div>{cliente.ciudad || '-'}</div>
                       {cliente.provincia && (
                         <div className="text-xs text-gray-500">{cliente.provincia}</div>
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {cliente.telefono || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -229,16 +229,16 @@ export default function GestionClientes() {
                   </button>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="text-sm space-y-1">
                   <div>
                     <span className="text-gray-500">CUIT:</span>
                     <span className="ml-1 text-gray-900">{cliente.cuit || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Tel:</span>
-                    <span className="ml-1 text-gray-900">{cliente.telefono || '-'}</span>
+                    <span className="text-gray-500">Dirección:</span>
+                    <span className="ml-1 text-gray-900">{cliente.direccion || '-'}</span>
                   </div>
-                  <div className="col-span-2">
+                  <div>
                     <span className="text-gray-500">Ciudad:</span>
                     <span className="ml-1 text-gray-900">
                       {cliente.ciudad || '-'}{cliente.provincia && `, ${cliente.provincia}`}

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
 // const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const apiUrl = 'http://localhost:3001';
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 // ✅ HELPER FUNCTIONS PARA SSR
 const isClient = () => typeof window !== 'undefined';
