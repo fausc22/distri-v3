@@ -1,4 +1,4 @@
-import { useVenta } from '../../context/VentasContext';
+import { useListaPrecios } from '../../context/ListaPreciosContext';
 
 function ControlCantidad({ cantidad, onCantidadChange }) {
   return (
@@ -135,7 +135,7 @@ function TarjetasMovil({ productos, onActualizarCantidad, onEliminar }) {
 }
 
 export default function ProductosCarritoListaPrecios() {
-  const { productos, updateCantidad, removeProducto } = useVenta();
+  const { productos, removeProducto, updateCantidad, subtotal, totalIva, total } = useListaPrecios();
 
   const handleActualizarCantidad = (index, nuevaCantidad) => {
     const cantidadValida = Math.max(0.5, nuevaCantidad);

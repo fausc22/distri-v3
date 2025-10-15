@@ -10,7 +10,7 @@ import { usePaginacion } from '../../hooks/usePaginacion';
 import { useEditarPedido } from '../../hooks/pedidos/useEditarPedido';
 import { useGenerarPDFPedido } from 'hooks/pedidos/useGenerarPdfPedido';
 import { useAnularPedido } from '../../hooks/pedidos/useAnularPedido';
-
+import { useFacturacion } from 'hooks/pedidos/useFacturacion';
 // Componentes
 import TablaPedidos from '../../components/pedidos/TablaPedidos';
 import FiltrosHistorialPedidos from '../../components/pedidos/FiltrosHistorialPedidos';
@@ -139,6 +139,8 @@ function HistorialPedidosContent() {
     cerrarEdicion,
     puedeEditarProductos
   } = useEditarPedido();
+
+  const { cuentas, loading: cargandoCuentas } = useFacturacion();
 
   // Verificar permisos de edición
   const esGerente = user?.rol === 'GERENTE';
@@ -570,6 +572,8 @@ function HistorialPedidosContent() {
         onDescargarPDF={descargarPDF}
         onCompartirPDF={compartirPDF}
         onCerrarModalPDF={cerrarModalPDF}
+        cuentas={cuentas}
+        cargandoCuentas={cargandoCuentas}
       />
 
       <ModalAgregarProductoPedido

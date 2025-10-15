@@ -1,9 +1,9 @@
-// components/ventas/ModalesVentaDirecta.jsx - ✅ VERSIÓN ACTUALIZADA SIN SELECT DE CUENTA
+// components/pedidos/ModalFacturacion.jsx - ✅ CON VALIDACIÓN DE CONDICIÓN IVA
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
-// Modal de descuentos (SIN CAMBIOS)
-export function ModalDescuentosVentaDirecta({
+// ✅ MODAL DE DESCUENTOS (sin cambios)
+export function ModalDescuentos({
   mostrar, 
   onClose, 
   onAplicarDescuento, 
@@ -77,7 +77,7 @@ export function ModalDescuentosVentaDirecta({
                   onChange={(e) => setTipoDescuento(e.target.value)}
                   className="mr-2"
                 />
-                <span className="text-sm">Descuento numérico (en pesos)</span>
+                <span className="text-sm">💰 Descuento numérico (en pesos)</span>
               </label>
               <label className="flex items-center">
                 <input
@@ -88,7 +88,7 @@ export function ModalDescuentosVentaDirecta({
                   onChange={(e) => setTipoDescuento(e.target.value)}
                   className="mr-2"
                 />
-                <span className="text-sm">Descuento porcentual (% sobre subtotal)</span>
+                <span className="text-sm">📊 Descuento porcentual (% sobre subtotal)</span>
               </label>
             </div>
           </div>
@@ -152,13 +152,13 @@ export function ModalDescuentosVentaDirecta({
               disabled={!valorDescuento || valorDescuento === '' || parseFloat(valorDescuento) <= 0}
               className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded transition-colors text-sm w-full sm:w-auto"
             >
-              Aplicar Descuento
+              ✅ Aplicar Descuento
             </button>
             <button
               onClick={handleClose}
               className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors text-sm w-full sm:w-auto"
             >
-              Cancelar
+              ❌ Cancelar
             </button>
           </div>
         </div>
@@ -167,13 +167,13 @@ export function ModalDescuentosVentaDirecta({
   );
 }
 
-// ✅ MODAL DE FACTURACIÓN ACTUALIZADO - SIN SELECT DE CUENTA
-export function ModalFacturacionVentaDirecta({ 
+// ✅ MODAL DE FACTURACIÓN - CON VALIDACIÓN DE CONDICIÓN IVA
+export function ModalFacturacion({ 
   mostrar, 
   onClose, 
-  cliente,
+  pedido,
   productos,
-  onConfirmarVenta
+  onConfirmarFacturacion
 }) {
   const [tipoFiscal, setTipoFiscal] = useState('A');
   const [subtotalSinIva, setSubtotalSinIva] = useState(0);
@@ -182,7 +182,7 @@ export function ModalFacturacionVentaDirecta({
   const [mostrarModalDescuentos, setMostrarModalDescuentos] = useState(false);
   const [descuentoAplicado, setDescuentoAplicado] = useState(null);
 
-  // ✅ NUEVA FUNCIÓN: Determinar tipo fiscal según condición IVA
+  // ✅ FUNCIÓN: Determinar tipo fiscal según condición IVA
   const determinarTipoFiscal = (condicionIva) => {
     if (!condicionIva || typeof condicionIva !== 'string') {
       return 'B';
@@ -202,11 +202,21 @@ export function ModalFacturacionVentaDirecta({
     }
   };
 
-  // Inicializar valores cuando se abre el modal
+  // ✅ FUNCIÓN: Verificar si una opción debe estar habilitada
+  const esTipoFiscalPermitido = (tipo) => {
+    // X siempre está habilitado
+    if (tipo === 'X') return true;
+    
+    // El tipo fiscal correcto según la condición IVA está habilitado
+    const tipoCorrectoPorIVA = determinarTipoFiscal(pedido?.cliente_condicion);
+    return tipo === tipoCorrectoPorIVA;
+  };
+
+  // ✅ Inicializar valores cuando se abre el modal
   useEffect(() => {
-    if (mostrar && productos && productos.length > 0 && cliente?.condicion_iva !== undefined) {
+    if (mostrar && productos && productos.length > 0 && pedido?.cliente_condicion !== undefined) {
       const subtotal = productos.reduce((acc, prod) => acc + (Number(prod.subtotal) || 0), 0);
-      const iva = productos.reduce((acc, prod) => acc + (Number(prod.iva_calculado) || 0), 0);
+      const iva = productos.reduce((acc, prod) => acc + (Number(prod.iva) || 0), 0);
       const total = subtotal + iva;
 
       setSubtotalSinIva(subtotal);
@@ -215,11 +225,11 @@ export function ModalFacturacionVentaDirecta({
       setDescuentoAplicado(null);
       
       setTimeout(() => {
-        const tipoFiscalAuto = determinarTipoFiscal(cliente.condicion_iva);
+        const tipoFiscalAuto = determinarTipoFiscal(pedido.cliente_condicion);
         setTipoFiscal(tipoFiscalAuto);
       }, 50);
     }
-  }, [mostrar, productos, cliente?.condicion_iva]);
+  }, [mostrar, productos, pedido?.cliente_condicion]);
 
   const handleAplicarDescuento = (descuento) => {
     setDescuentoAplicado(descuento);
@@ -230,7 +240,6 @@ export function ModalFacturacionVentaDirecta({
   };
 
   const handleConfirmar = async () => {
-    // ✅ Determinar cuenta según tipo fiscal (1=ARCA, 2=X)
     const cuentaId = tipoFiscal === 'X' ? 2 : 1;
 
     const totalOriginal = subtotalSinIva + ivaTotal;
@@ -238,7 +247,7 @@ export function ModalFacturacionVentaDirecta({
     const totalFinal = totalOriginal - descuentoMonto;
 
     const datosFacturacion = {
-      cuentaId: cuentaId, // ✅ Se determina automáticamente
+      cuentaId: cuentaId,
       tipoFiscal,
       subtotalSinIva,
       ivaTotal,
@@ -246,7 +255,7 @@ export function ModalFacturacionVentaDirecta({
       descuentoAplicado
     };
 
-    await onConfirmarVenta(datosFacturacion);
+    await onConfirmarFacturacion(datosFacturacion);
   };
 
   const limpiarFormulario = () => {
@@ -267,6 +276,9 @@ export function ModalFacturacionVentaDirecta({
   const totalOriginal = subtotalSinIva + ivaTotal;
   const descuentoMonto = descuentoAplicado?.descuentoCalculado || 0;
   const totalFinalConDescuento = totalOriginal - descuentoMonto;
+  
+  // ✅ Determinar el tipo fiscal correcto según la condición IVA
+  const tipoFiscalCorrecto = determinarTipoFiscal(pedido?.cliente_condicion);
 
   return (
     <>
@@ -275,7 +287,7 @@ export function ModalFacturacionVentaDirecta({
           <div className="p-4 sm:p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800">
-                Completar Venta Directa
+                Facturar Pedido #{pedido?.id}
               </h2>
               <button 
                 onClick={handleClose}
@@ -285,12 +297,12 @@ export function ModalFacturacionVentaDirecta({
               </button>
             </div>
             
-            {/* Información del cliente */}
+            {/* Información del pedido */}
             <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-semibold text-blue-800 mb-2">Información del Cliente</h3>
+              <h3 className="font-semibold text-blue-800 mb-2">Información del Pedido</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                 <div>
-                  <span className="font-medium">Cliente:</span> {cliente?.nombre}
+                  <span className="font-medium">Cliente:</span> {pedido?.cliente_nombre}
                 </div>
                 <div>
                   <span className="font-medium">Productos:</span> {productos?.length || 0}
@@ -298,19 +310,16 @@ export function ModalFacturacionVentaDirecta({
                 <div className="sm:col-span-2">
                   <span className="font-medium">Condición IVA:</span> 
                   <span className="ml-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
-                    {cliente?.condicion_iva || 'No especificada'}
+                    {pedido?.cliente_condicion || 'No especificada'}
                   </span>
                 </div>
               </div>
             </div>
             
-            {/* ✅ SOLO TIPO FISCAL - SIN SELECT DE CUENTA */}
+            {/* ✅ SELECT CON OPCIONES DESHABILITADAS SEGÚN CONDICIÓN IVA */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Tipo Fiscal *
-                <span className="text-xs text-green-600 ml-1">
-                  (Auto-seleccionado según condición IVA)
-                </span>
               </label>
               <select
                 value={tipoFiscal}
@@ -318,14 +327,33 @@ export function ModalFacturacionVentaDirecta({
                 className="border p-2 rounded w-full text-sm font-medium"
                 required
               >
-                <option value="A">A - Responsable Inscripto / Monotributo</option>
-                <option value="B">B - Consumidor Final / Exento</option>
-                <option value="X">X</option>
+                <option 
+                  value="A" 
+                  disabled={!esTipoFiscalPermitido('A')}
+                  className={!esTipoFiscalPermitido('A') ? 'text-gray-400 bg-gray-100' : ''}
+                >
+                  A - Responsable Inscripto / Monotributo
+                  {!esTipoFiscalPermitido('A') && ' (No corresponde según condición IVA)'}
+                </option>
+                <option 
+                  value="B" 
+                  disabled={!esTipoFiscalPermitido('B')}
+                  className={!esTipoFiscalPermitido('B') ? 'text-gray-400 bg-gray-100' : ''}
+                >
+                  B - Consumidor Final / Exento
+                  {!esTipoFiscalPermitido('B') && ' (No corresponde según condición IVA)'}
+                </option>
+                <option value="X">
+                  X 
+                </option>
               </select>
               
-              {/* ✅ Indicador de cuenta destino */}
-              <div className="mt-2 text-xs text-gray-600 bg-blue-50 p-2 rounded border border-blue-200">
-                💰 Cuenta destino: <strong>{tipoFiscal === 'X' ? 'X' : 'ARCA'}</strong>
+              {/* ✅ Mensaje informativo */}
+              <div className="mt-2 text-xs">
+                
+                <div className="bg-blue-50 p-2 rounded border border-blue-200 text-blue-700 mt-1">
+                  💰 Cuenta destino: <strong>{tipoFiscal === 'X' ? 'X' : 'ARCA'}</strong>
+                </div>
               </div>
             </div>
             
@@ -403,7 +431,7 @@ export function ModalFacturacionVentaDirecta({
                 onClick={handleConfirmar}
                 className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors w-full sm:w-1/2"
               >
-                CONFIRMAR VENTA
+                CONFIRMAR FACTURACIÓN
               </button>
               <button
                 onClick={handleClose}
@@ -418,7 +446,7 @@ export function ModalFacturacionVentaDirecta({
        
       {/* Modal de descuentos */}
       {mostrarModalDescuentos && (
-        <ModalDescuentosVentaDirecta 
+        <ModalDescuentos 
           mostrar={mostrarModalDescuentos} 
           onClose={() => setMostrarModalDescuentos(false)} 
           onAplicarDescuento={handleAplicarDescuento}
@@ -431,63 +459,4 @@ export function ModalFacturacionVentaDirecta({
   );
 }
 
-// Modal de confirmación simple (SIN CAMBIOS)
-export function ModalConfirmacionVentaDirecta({ 
-  mostrar, 
-  cliente, 
-  totalProductos, 
-  total, 
-  onConfirmar, 
-  onCancelar,
-  loading = false 
-}) {
-  if (!mostrar) return null;
-
-  return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 className="text-xl font-bold mb-4 text-center">Confirmar Venta Directa</h3>
-        <div className="text-center mb-6">
-          <p className="mb-2">
-            ¿Deseas proceder con la venta directa para el cliente{' '}
-            <span className="font-bold">{cliente?.nombre}</span> con{' '}
-            <span className="font-bold">{totalProductos}</span> productos y un total de{' '}
-            <span className="font-bold text-green-700">${Number(total).toFixed(2)}</span>?
-          </p>
-          <p className="text-sm text-gray-600 mt-2">
-            Se generará automáticamente: Pedido + Venta + Remito
-          </p>
-        </div>
-        
-        {loading && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
-              <span className="text-blue-700 font-medium">Procesando venta directa...</span>
-            </div>
-          </div>
-        )}
-        
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={onConfirmar}
-            disabled={loading}
-            className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed text-white px-6 py-2 rounded font-semibold transition-colors flex items-center gap-2"
-          >
-            {loading && (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            )}
-            {loading ? 'Procesando...' : 'Sí, Continuar'}
-          </button>
-          <button
-            onClick={onCancelar}
-            disabled={loading}
-            className="bg-gray-500 hover:bg-gray-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-2 rounded font-semibold transition-colors"
-          >
-            No, Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+export default ModalFacturacion;

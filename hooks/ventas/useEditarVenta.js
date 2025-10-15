@@ -43,7 +43,7 @@ export function useEditarVenta() {
   // Nueva función para recargar venta actualizada con datos de CAE
   const recargarVenta = async (ventaId) => {
     try {
-      const response = await axiosAuth.get(`/ventas/filtrar-venta/${ventaId}`);
+      const response = await axiosAuth.get(`/ventas/obtener-venta/${ventaId}`);
       if (response.data && response.data.length > 0) {
         setSelectedVenta(response.data[0]);
         return response.data[0];
