@@ -285,55 +285,87 @@ function HistorialVentasContent() {
   };
 
   // Handler para solicitar CAE múltiple
-  const handleSolicitarCAE = async () => {
-    // ✅ ACTUALIZADO: Usar ventasAMostrar
-    const ventasSinCAE = ventasAMostrar.filter(venta => 
-      selectedVentas.includes(venta.id) && !venta.cae_id
-    );
-    
-    if (ventasSinCAE.length === 0) {
-      toast.error('Todas las ventas seleccionadas ya tienen CAE asignado');
-      return;
-    }
-    
-    const confirmacion = window.confirm(
-      `¿Solicitar CAE para ${ventasSinCAE.length} venta${ventasSinCAE.length > 1 ? 's' : ''}?\n\n` +
-      `Esto enviará las facturas a ARCA/AFIP para obtener autorización electrónica.`
-    );
-    
-    if (!confirmacion) return;
-    
-    console.log(`📋 Solicitando CAE para ${ventasSinCAE.length} ventas...`);
-    
-    try {
-      if (ventasSinCAE.length === 1) {
-        const resultado = await solicitarCAE(ventasSinCAE[0].id);
-        
-        if (resultado.success) {
-          await cargarVentas();
-          clearSelection();
-        }
-      } else {
-        const ventasIds = ventasSinCAE.map(v => v.id);
-        const resultado = await solicitarCAEMultiple(ventasIds);
-        
-        if (resultado.success) {
-          toast.success(
-            `✅ Proceso completado:\n` +
-            `${resultado.resumen.exitosos} exitosos\n` +
-            `${resultado.resumen.fallidos} fallidos`,
-            { duration: 5000 }
-          );
-          
-          await cargarVentas();
-          clearSelection();
-        }
+const handleSolicitarCAE = async () => {
+  // Obtener ventas seleccionadas completas
+  const ventasSeleccionadas = ventasAMostrar.filter(venta => 
+    selectedVentas.includes(venta.id)
+  );
+  
+  // ✅ FILTRAR: Excluir facturas tipo X
+  const ventasValidasParaCAE = ventasSeleccionadas.filter(venta => {
+    const tipoF = (venta.tipo_f || '').toString().trim().toUpperCase();
+    return tipoF !== 'X';
+  });
+  
+  // ✅ FILTRAR: Solo las que no tienen CAE
+  const ventasSinCAE = ventasValidasParaCAE.filter(venta => !venta.cae_id);
+  
+  // Validaciones
+  if (ventasSeleccionadas.length === 0) {
+    toast.error('No hay ventas seleccionadas');
+    return;
+  }
+  
+  if (ventasValidasParaCAE.length === 0) {
+    toast.error('Las facturas tipo X no requieren CAE de AFIP', {
+      duration: 5000,
+      icon: '🚫'
+    });
+    return;
+  }
+  
+  if (ventasSinCAE.length === 0) {
+    toast.info('Todas las ventas seleccionadas ya tienen CAE asignado');
+    return;
+  }
+  
+  // ✅ MENSAJE DE ADVERTENCIA si hay facturas tipo X
+  const cantidadTipoX = ventasSeleccionadas.length - ventasValidasParaCAE.length;
+  let mensajeConfirmacion = `¿Solicitar CAE para ${ventasSinCAE.length} venta${ventasSinCAE.length > 1 ? 's' : ''}?\n\n`;
+  
+  if (cantidadTipoX > 0) {
+    mensajeConfirmacion += `⚠️ NOTA: ${cantidadTipoX} factura${cantidadTipoX > 1 ? 's' : ''} tipo X ${cantidadTipoX > 1 ? 'serán omitidas' : 'será omitida'} (no requieren CAE).\n\n`;
+  }
+  
+  mensajeConfirmacion += `Esto enviará las facturas a ARCA/AFIP para obtener autorización electrónica.`;
+  
+  const confirmacion = window.confirm(mensajeConfirmacion);
+  
+  if (!confirmacion) return;
+  
+  console.log(`📋 Solicitando CAE para ${ventasSinCAE.length} ventas (${cantidadTipoX} tipo X omitidas)...`);
+  
+  try {
+    if (ventasSinCAE.length === 1) {
+      const resultado = await solicitarCAE(ventasSinCAE[0].id);
+      
+      if (resultado.success) {
+        await cargarVentas();
+        clearSelection();
       }
-    } catch (error) {
-      console.error('❌ Error en solicitud de CAE:', error);
-      toast.error('Error al procesar solicitudes de CAE');
+    } else {
+      const ventasIds = ventasSinCAE.map(v => v.id);
+      const resultado = await solicitarCAEMultiple(ventasIds);
+      
+      if (resultado.success) {
+        // ✅ MENSAJE MEJORADO con información de tipo X
+        let mensajeExito = `✅ Proceso completado:\n${resultado.resumen.exitosos} exitosos\n${resultado.resumen.fallidos} fallidos`;
+        
+        if (cantidadTipoX > 0) {
+          mensajeExito += `\n\n🚫 ${cantidadTipoX} factura${cantidadTipoX > 1 ? 's' : ''} tipo X omitida${cantidadTipoX > 1 ? 's' : ''}`;
+        }
+        
+        toast.success(mensajeExito, { duration: 6000 });
+        
+        await cargarVentas();
+        clearSelection();
+      }
     }
-  };
+  } catch (error) {
+    console.error('❌ Error en solicitud de CAE:', error);
+    toast.error('Error al procesar solicitudes de CAE');
+  }
+};
 
   // Handler para solicitar CAE individual
   const handleSolicitarCAEIndividual = async (ventaId) => {
@@ -444,6 +476,7 @@ function HistorialVentasContent() {
         <div ref={botonesAccionRef}>
           <BotonAcciones
             selectedVentas={selectedVentas}
+            ventasSeleccionadasCompletas={ventasAMostrar.filter(v => selectedVentas.includes(v.id))} // ✅ NUEVA PROP
             onImprimirMultiple={handleImprimirMultiple}
             imprimiendo={imprimiendoMultiple}
             onSolicitarCAE={handleSolicitarCAE}

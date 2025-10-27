@@ -55,14 +55,37 @@ function BotonVerComprobante({ venta, onVerComprobante }) {
 // COMPONENTE: Botón CAE Dinámico
 function BotonCAE({ venta, onSolicitarCAE, onVerDetalleCAE, solicitandoCAE }) {
   const tieneCAE = venta?.cae_id;
+  
+  // ✅ NUEVA VALIDACIÓN: Verificar si es tipo X
+  const tipoF = (venta?.tipo_f || '').toString().trim().toUpperCase();
+  const esTipoX = tipoF === 'X';
 
   const handleClick = () => {
+    if (esTipoX) {
+      return; // No hacer nada si es tipo X
+    }
+    
     if (tieneCAE) {
       onVerDetalleCAE();
     } else {
       onSolicitarCAE(venta.id);
     }
   };
+
+  // ✅ Si es tipo X, mostrar botón deshabilitado con mensaje
+  if (esTipoX) {
+    return (
+      <button
+        disabled
+        className="text-sm sm:text-base font-semibold px-4 rounded-lg w-full h-12 flex items-center justify-center gap-2 bg-gray-300 text-gray-500 cursor-not-allowed"
+        title="Las facturas tipo X no requieren CAE de AFIP"
+      >
+        <span className="text-lg flex-shrink-0">🚫</span>
+        <span className="hidden sm:inline truncate">TIPO X - SIN CAE</span>
+        <span className="sm:hidden truncate">SIN CAE</span>
+      </button>
+    );
+  }
 
   return (
     <button
@@ -179,6 +202,16 @@ function InformacionAdicional({ venta, cuenta }) {
   return (
     <div className="bg-gray-100 p-4 rounded-lg mb-4">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        {venta.numero_factura && (
+          <div>
+            <h3 className="font-bold text-xl mb-2 text-gray-800">Número de Factura</h3>
+            <span className="inline-block px-3 py-1 rounded bg-blue-100 text-blue-800 text-sm font-mono font-bold">
+              {venta.numero_factura}
+            </span>
+          </div>
+        )}
+
         <div>
           <h3 className="font-bold text-xl mb-2 text-gray-800">Tipo Documento</h3>
           <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getDocumentoStyle(venta.tipo_doc)}`}>

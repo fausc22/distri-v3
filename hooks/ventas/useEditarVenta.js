@@ -1,3 +1,4 @@
+// hooks/ventas/useEditarVenta.js
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { axiosAuth } from '../../utils/apiClient';
@@ -15,6 +16,13 @@ export function useEditarVenta() {
     try {
       const response = await axiosAuth.get(`/ventas/obtener-productos-venta/${venta.id}`);
       setProductos(response.data);
+      
+      // ✅ NUEVO: Log para verificar numero_factura en venta seleccionada
+      console.log('📋 Venta seleccionada:', {
+        id: venta.id,
+        numero_factura: venta.numero_factura,
+        cliente: venta.cliente_nombre
+      });
     } catch (error) {
       console.error("Error al obtener productos:", error);
       toast.error("No se pudieron cargar los productos");
@@ -40,13 +48,21 @@ export function useEditarVenta() {
     }
   };
 
-  // Nueva función para recargar venta actualizada con datos de CAE
+  // ✅ FUNCIÓN MEJORADA para recargar con numero_factura
   const recargarVenta = async (ventaId) => {
     try {
       const response = await axiosAuth.get(`/ventas/obtener-venta/${ventaId}`);
       if (response.data && response.data.length > 0) {
-        setSelectedVenta(response.data[0]);
-        return response.data[0];
+        const ventaActualizada = response.data[0];
+        setSelectedVenta(ventaActualizada);
+        
+        console.log('✅ Venta recargada con numero_factura:', {
+          id: ventaActualizada.id,
+          numero_factura: ventaActualizada.numero_factura,
+          cae_id: ventaActualizada.cae_id
+        });
+        
+        return ventaActualizada;
       }
     } catch (error) {
       console.error("Error al recargar venta:", error);
