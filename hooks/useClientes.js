@@ -14,7 +14,9 @@ export const useClientes = () => {
       
       if (response.data.success) {
         toast.success('Cliente creado correctamente');
-        return { success: true, data: response.data };
+        // El backend devuelve: { success: true, message: "...", data: {...cliente} }
+        // Necesitamos pasar el cliente completo
+        return { success: true, data: response.data.data };
       }
     } catch (error) {
       console.error('Error al crear cliente:', error);
@@ -53,7 +55,8 @@ export const useClientes = () => {
       
       if (response.data.success) {
         toast.success('Cliente actualizado correctamente');
-        return { success: true, data: response.data };
+        // El backend puede devolver el cliente actualizado o solo success
+        return { success: true, data: response.data.data || response.data };
       }
     } catch (error) {
       console.error('Error al actualizar cliente:', error);
@@ -69,10 +72,20 @@ export const useClientes = () => {
   const validarDatosCliente = (datos) => {
     const errores = [];
 
+    // ✅ CAMPOS OBLIGATORIOS
     if (!datos.nombre?.trim()) {
       errores.push('El nombre es obligatorio');
     }
 
+    if (!datos.condicion_iva?.trim()) {
+      errores.push('La condición de IVA es obligatoria');
+    }
+
+    if (!datos.ciudad?.trim()) {
+      errores.push('La ciudad es obligatoria');
+    }
+
+    // ✅ VALIDACIONES OPCIONALES (solo si tienen contenido)
     if (datos.cuit && datos.cuit.length > 0 && !/^\d{2}-\d{8}-\d{1}$/.test(datos.cuit)) {
       // Validación flexible para CUIT (puede estar vacío)
       if (datos.cuit.replace(/\D/g, '').length !== 11) {

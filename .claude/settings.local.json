@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/erp_distri/distri-back/**)",
+      "Bash(dir /B \"c:\\erp_distri\\distri-back\\routes\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

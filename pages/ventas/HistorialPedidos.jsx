@@ -402,7 +402,7 @@ function HistorialPedidosContent() {
     try {
       console.log('📝 Actualizando observaciones para pedido:', selectedPedido.id);
       const exito = await actualizarObservaciones(nuevasObservaciones);
-      
+
       if (exito) {
         await cargarPedidos();
         toast.success('Observaciones actualizadas correctamente');
@@ -413,6 +413,37 @@ function HistorialPedidosContent() {
       console.error('❌ Error al actualizar observaciones:', error);
       toast.error('Error al actualizar observaciones');
       return false;
+    }
+  };
+
+  // Handler para actualizar cliente del pedido
+  const handleActualizarClientePedido = async (nuevoCliente) => {
+    if (!selectedPedido) {
+      toast.error('No hay pedido seleccionado');
+      throw new Error('No hay pedido seleccionado');
+    }
+
+    try {
+      console.log('🔄 Actualizando cliente del pedido:', selectedPedido.id, 'Nuevo cliente:', nuevoCliente.id);
+
+      const response = await axiosAuth.put(`/pedidos/actualizar-cliente/${selectedPedido.id}`, {
+        cliente_id: nuevoCliente.id
+      });
+
+      if (response.data.success) {
+        toast.success(`Cliente actualizado a: ${nuevoCliente.nombre}`);
+        await cargarPedidos();
+        // Recargar productos del pedido para actualizar la vista
+        await cargarProductosPedido(selectedPedido);
+        return true;
+      } else {
+        toast.error(response.data.message || 'Error al actualizar cliente');
+        throw new Error(response.data.message);
+      }
+    } catch (error) {
+      console.error('❌ Error al actualizar cliente del pedido:', error);
+      toast.error('Error al actualizar el cliente del pedido');
+      throw error;
     }
   };
 
@@ -560,7 +591,8 @@ function HistorialPedidosContent() {
         generandoPDF={generandoPDF}
         mostrarModalFacturacion={mostrarModalFacturacion}
         setMostrarModalFacturacion={setMostrarModalFacturacion}
-        onActualizarObservaciones={handleActualizarObservaciones} 
+        onActualizarObservaciones={handleActualizarObservaciones}
+        onActualizarClientePedido={handleActualizarClientePedido}
         isPedidoFacturado={selectedPedido?.estado === 'Facturado'}
         isPedidoAnulado={selectedPedido?.estado === 'Anulado'}
         // ✅ Props para modal PDF individual

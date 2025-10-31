@@ -206,32 +206,70 @@ const determinarTipoFiscal = (condicionIva) => {
 
 
 // ✅ RESTO DE COMPONENTES SIN CAMBIOS (InformacionCliente, etc.)
-export function InformacionCliente({ 
-  pedido, 
-  expandido, 
-  onToggleExpansion, 
-  mostrarModalFacturacion, 
-  setMostrarModalFacturacion, 
-  productos, 
+import ModalEditarClientePedido from './ModalEditarClientePedido';
+
+export function InformacionCliente({
+  pedido,
+  expandido,
+  onToggleExpansion,
+  mostrarModalFacturacion,
+  setMostrarModalFacturacion,
+  productos,
   handleConfirmarFacturacion,
   cuentas = [],
-  cargandoCuentas = false
+  cargandoCuentas = false,
+  onActualizarClientePedido,
+  isPedidoAnulado = false
 }) {
+  const [mostrarModalEditarCliente, setMostrarModalEditarCliente] = useState(false);
+  const [clienteActualizado, setClienteActualizado] = useState(null);
+
+  // Usar cliente actualizado si existe, sino usar el del pedido
+  const clienteMostrar = clienteActualizado || {
+    id: pedido.cliente_id,
+    nombre: pedido.cliente_nombre,
+    direccion: pedido.cliente_direccion,
+    ciudad: pedido.cliente_ciudad,
+    provincia: pedido.cliente_provincia,
+    condicion_iva: pedido.cliente_condicion,
+    cuit: pedido.cliente_cuit,
+    telefono: pedido.cliente_telefono
+  };
+
+  const handleClienteSeleccionado = (nuevoCliente) => {
+    setClienteActualizado(nuevoCliente);
+  };
+
   return (
     <div className="bg-blue-50 rounded-lg overflow-hidden mb-4">
-      <div 
+      <div
         className="p-3 cursor-pointer hover:bg-blue-100 transition-colors flex items-center justify-between"
         onClick={onToggleExpansion}
       >
-        <div>
-          <h3 className="font-bold text-lg text-blue-800">Cliente: {pedido.cliente_nombre}</h3>
+        <div className="flex-1">
+          <h3 className="font-bold text-lg text-blue-800">Cliente: {clienteMostrar.nombre}</h3>
           <p className="text-blue-600 text-sm">
-            {pedido.cliente_ciudad || 'Ciudad no especificada'}
-            {pedido.cliente_provincia && `, ${pedido.cliente_provincia}`}
+            {clienteMostrar.ciudad || 'Ciudad no especificada'}
+            {clienteMostrar.provincia && `, ${clienteMostrar.provincia}`}
           </p>
         </div>
-        <div className="text-blue-600">
-          {expandido ? <MdExpandLess size={24} /> : <MdExpandMore size={24} />}
+        <div className="flex items-center gap-2">
+          {/* Botón para editar cliente */}
+          {!isPedidoAnulado && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setMostrarModalEditarCliente(true);
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors flex items-center gap-1"
+              title="Cambiar cliente"
+            >
+              ✏️ <span className="hidden sm:inline">Editar</span>
+            </button>
+          )}
+          <div className="text-blue-600">
+            {expandido ? <MdExpandLess size={24} /> : <MdExpandMore size={24} />}
+          </div>
         </div>
       </div>
       <div className={`transition-all duration-300 ease-in-out ${
@@ -241,24 +279,24 @@ export function InformacionCliente({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-3">
             <div>
               <span className="font-medium text-blue-700">Dirección:</span>
-              <p className="text-gray-700">{pedido.cliente_direccion || 'No especificada'}</p>
+              <p className="text-gray-700">{clienteMostrar.direccion || 'No especificada'}</p>
             </div>
             <div>
               <span className="font-medium text-blue-700">Condición IVA:</span>
-              <p className="text-gray-700">{pedido.cliente_condicion || 'No especificada'}</p>
+              <p className="text-gray-700">{clienteMostrar.condicion_iva || 'No especificada'}</p>
             </div>
             <div>
               <span className="font-medium text-blue-700">CUIT:</span>
-              <p className="text-gray-700">{pedido.cliente_cuit || 'No especificado'}</p>
+              <p className="text-gray-700">{clienteMostrar.cuit || 'No especificado'}</p>
             </div>
             <div>
               <span className="font-medium text-blue-700">Teléfono:</span>
-              <p className="text-gray-700">{pedido.cliente_telefono || 'No especificado'}</p>
+              <p className="text-gray-700">{clienteMostrar.telefono || 'No especificado'}</p>
             </div>
           </div>
         </div>
       </div>
-      
+
       {/* ✅ USAR EL MODAL NUEVO SEPARADO */}
       <ModalFacturacion
         mostrar={mostrarModalFacturacion}
@@ -268,6 +306,15 @@ export function InformacionCliente({
         cuentas={cuentas}
         cargandoCuentas={cargandoCuentas}
         onConfirmarFacturacion={handleConfirmarFacturacion}
+      />
+
+      {/* Modal para editar/cambiar cliente */}
+      <ModalEditarClientePedido
+        isOpen={mostrarModalEditarCliente}
+        onClose={() => setMostrarModalEditarCliente(false)}
+        clienteActual={clienteMostrar}
+        onClienteSeleccionado={handleClienteSeleccionado}
+        onActualizarPedido={onActualizarClientePedido}
       />
     </div>
   );
@@ -1501,7 +1548,7 @@ export function ResumenTotales({ productos }) {
 
 
 
-export function ModalDetallePedido({ 
+export function ModalDetallePedido({
   pedido,
   productos,
   loading,
@@ -1512,6 +1559,7 @@ export function ModalDetallePedido({
   onCambiarEstado,
   onGenerarPDF,
   onActualizarObservaciones,
+  onActualizarClientePedido,
   generandoPDF,
   mostrarModalFacturacion,
   setMostrarModalFacturacion,
@@ -1622,8 +1670,8 @@ export function ModalDetallePedido({
             </div>
             
             {/* ✅ PASAR CUENTAS Y CARGANDO AL COMPONENTE */}
-            <InformacionCliente 
-              pedido={pedido} 
+            <InformacionCliente
+              pedido={pedido}
               expandido={clienteExpandido}
               onToggleExpansion={toggleClienteExpansion}
               mostrarModalFacturacion={mostrarModalFacturacion}
@@ -1632,6 +1680,8 @@ export function ModalDetallePedido({
               handleConfirmarFacturacion={handleConfirmarFacturacion}
               cuentas={cuentas}                     // ✅ PASAR CUENTAS
               cargandoCuentas={cargandoCuentas}     // ✅ PASAR LOADING
+              onActualizarClientePedido={onActualizarClientePedido} // ✅ PASAR HANDLER
+              isPedidoAnulado={isPedidoAnulado}     // ✅ PASAR ESTADO ANULADO
             />
 
             <InformacionAdicional 

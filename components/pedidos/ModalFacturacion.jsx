@@ -332,7 +332,7 @@ export function ModalFacturacion({
                   disabled={!esTipoFiscalPermitido('A')}
                   className={!esTipoFiscalPermitido('A') ? 'text-gray-400 bg-gray-100' : ''}
                 >
-                  A - Responsable Inscripto / Monotributo
+                  A - {pedido.cliente_condicion}
                   {!esTipoFiscalPermitido('A') && ' (No corresponde según condición IVA)'}
                 </option>
                 <option 
@@ -340,21 +340,15 @@ export function ModalFacturacion({
                   disabled={!esTipoFiscalPermitido('B')}
                   className={!esTipoFiscalPermitido('B') ? 'text-gray-400 bg-gray-100' : ''}
                 >
-                  B - Consumidor Final / Exento
+                  B - {pedido.cliente_condicion}
                   {!esTipoFiscalPermitido('B') && ' (No corresponde según condición IVA)'}
                 </option>
                 <option value="X">
-                  X 
+                  X - {pedido.cliente_condicion}
                 </option>
               </select>
               
-              {/* ✅ Mensaje informativo */}
-              <div className="mt-2 text-xs">
-                
-                <div className="bg-blue-50 p-2 rounded border border-blue-200 text-blue-700 mt-1">
-                  💰 Cuenta destino: <strong>{tipoFiscal === 'X' ? 'X' : 'ARCA'}</strong>
-                </div>
-              </div>
+              
             </div>
             
             {/* Sección de descuentos */}

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import ModalBase from '../common/ModalBase';
 import { useClientes } from '../../hooks/useClientes';
+import CiudadAutocomplete from '../common/CiudadAutocomplete';
 
 export default function ModalCliente({ 
   cliente, 
@@ -69,6 +70,14 @@ export default function ModalCliente({
     setErrores([]);
   };
 
+  const handleCiudadSeleccionada = (ciudad) => {
+    setFormData(prev => ({
+      ...prev,
+      ciudad: ciudad.nombre,
+      ciudad_id: ciudad.id
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -98,6 +107,9 @@ export default function ModalCliente({
     'Monotributo',
     'Consumidor Final'
   ];
+
+  // Determinar si mostrar DNI o CUIT según la condición IVA
+  const esConsumidorFinal = formData.condicion_iva === 'Consumidor Final';
 
   return (
     <ModalBase
@@ -156,7 +168,7 @@ export default function ModalCliente({
           {/* Condición IVA */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Condición IVA
+              Condición IVA *
             </label>
             <select
               name="condicion_iva"
@@ -164,6 +176,7 @@ export default function ModalCliente({
               onChange={handleInputChange}
               className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={loading}
+              required
             >
               <option value="">Seleccionar...</option>
               {condicionesIVA.map(cond => (
@@ -172,36 +185,40 @@ export default function ModalCliente({
             </select>
           </div>
 
-          {/* CUIT */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              CUIT
-            </label>
-            <input
-              type="text"
-              name="cuit"
-              value={formData.cuit}
-              onChange={handleInputChange}
-              placeholder="20-12345678-9"
-              className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={loading}
-            />
-          </div>
-
-          {/* DNI */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              DNI
-            </label>
-            <input
-              type="text"
-              name="dni"
-              value={formData.dni}
-              onChange={handleInputChange}
-              className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={loading}
-            />
-          </div>
+          {/* Mostrar DNI o CUIT según condición IVA */}
+          {esConsumidorFinal ? (
+            /* DNI para Consumidor Final */
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                DNI
+              </label>
+              <input
+                type="text"
+                name="dni"
+                value={formData.dni}
+                onChange={handleInputChange}
+                placeholder="12345678"
+                className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={loading}
+              />
+            </div>
+          ) : (
+            /* CUIT para otros */
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                CUIT
+              </label>
+              <input
+                type="text"
+                name="cuit"
+                value={formData.cuit}
+                onChange={handleInputChange}
+                placeholder="20-12345678-9"
+                className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={loading}
+              />
+            </div>
+          )}
 
           {/* Teléfono */}
           <div>
@@ -212,21 +229,6 @@ export default function ModalCliente({
               type="text"
               name="telefono"
               value={formData.telefono}
-              onChange={handleInputChange}
-              className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={loading}
-            />
-          </div>
-
-          {/* Email */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
               onChange={handleInputChange}
               className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={loading}
@@ -248,18 +250,18 @@ export default function ModalCliente({
             />
           </div>
 
-          {/* Ciudad */}
+          {/* Ciudad con Autocomplete */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ciudad
+              Ciudad *
             </label>
-            <input
-              type="text"
-              name="ciudad"
+            <CiudadAutocomplete
               value={formData.ciudad}
-              onChange={handleInputChange}
-              className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onChange={(value) => setFormData(prev => ({ ...prev, ciudad: value }))}
+              onCiudadSeleccionada={handleCiudadSeleccionada}
               disabled={loading}
+              placeholder="Escribe al menos 2 caracteres..."
+              required
             />
           </div>
 
@@ -277,6 +279,56 @@ export default function ModalCliente({
               disabled={loading}
             />
           </div>
+
+          {/* Email */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={loading}
+            />
+          </div>
+
+          {/* Mostrar campo complementario según condición IVA */}
+          {esConsumidorFinal ? (
+            /* Mostrar CUIT adicional para Consumidor Final */
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                CUIT (Opcional)
+              </label>
+              <input
+                type="text"
+                name="cuit"
+                value={formData.cuit}
+                onChange={handleInputChange}
+                placeholder="20-12345678-9"
+                className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={loading}
+              />
+            </div>
+          ) : (
+            /* Mostrar DNI adicional para otros */
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                DNI (Opcional)
+              </label>
+              <input
+                type="text"
+                name="dni"
+                value={formData.dni}
+                onChange={handleInputChange}
+                placeholder="12345678"
+                className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={loading}
+              />
+            </div>
+          )}
         </div>
 
         {/* Botones */}
