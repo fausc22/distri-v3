@@ -2,7 +2,7 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: false,
+  disable: process.env.NODE_ENV === 'development',
   buildExcludes: [/middleware-manifest\.json$/],
   
   // ✅ CACHE OBLIGATORIO DE TODAS LAS PÁGINAS CRÍTICAS
@@ -135,7 +135,11 @@ const withPWA = require('next-pwa')({
 
 module.exports = withPWA({
   reactStrictMode: true,
-  
+
+  // Configuración para producción y desarrollo
+  poweredByHeader: false,
+  compress: true,
+
   // ✅ HEADERS PARA CACHE AGRESIVO
   async headers() {
     return [
